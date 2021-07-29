@@ -3,18 +3,61 @@ import requests
 import os
 
 
-def folder_create():
+def folder_create(images):
     try:
         folder_name = input("Enter Folder Name: ")
         os.mkdir(folder_name)
     except:
         print("Folder Exist with that name!")
         folder_create()
+    download_images(images,folder_name)
 
+def download_images(images, folder_name):
+    count = 0
+    print(f"Total {len(images)} Image Found!")
+    if len(images) != 0:
+        for i, image in enumerate(images):
+            try:
+                image_link = image["data-srcset"]
+            except:
+                try:
+                    image_link = image["data-src"]
+                except:
+                    try:
+                        image_link = image["data-fallback-src"]
+                    except:
+                        try:
+                            image_link = image["src"]
+                        except:
+                            pass
+            try:
+                print("link"+image_link)
+                r = requests.get(image_link).content
+                try:
+                    r = str(r,'utf-8')
+                    #print(r)
+
+                except UnicodeDecodeError:
+                    with open (f"{folder_name}/images{i+1}.jpg","wb+") as f:
+                        f.write(r)
+                    print("descarga")
+                    count+=1
+                    
+            except:
+                pass
+        if count == len(images):
+            print("All images download")
+        else:
+            print(f"Tottal { count } Images Downloaded Out of {len(images)}")
+                    
 def run(url):
-    print(url)
-    folder_create()
+    r= requests.get(url)
+    soup = BeautifulSoup(r.text, 'html.parser')
+    images = soup.findAll('img')
+#    print(images)
+    folder_create(images)
 
 
 if __name__ == "__main__":
-    run("https://www.instagram.com/p/CR38k-HDTMm/")
+    url = input("Enter URL : ")
+    run(url)
